@@ -50,29 +50,6 @@ namespace DocumentDistance
             List<string> doc1 = ExtractWords(docString1);
             List<string> doc2 = ExtractWords(docString2);
 
-            // Compare sets of words
-            //HashSet<string> set1 = new HashSet<string>(doc1);
-            //HashSet<string> set2 = new HashSet<string>(doc2);
-
-            // Check for differences
-            //var onlyInSet1 = set1.Except(set2);
-            //var onlyInSet2 = set2.Except(set1);
-
-            //Console.WriteLine("Words only in doc1:");
-            //Console.WriteLine(string.Join(", ", onlyInSet1));
-
-            //Console.WriteLine("Words only in doc2:");
-            //Console.WriteLine(string.Join(", ", onlyInSet2));
-
-            //use regex
-            //string regex = @"[^a-zA-Z0-9]+";
-            //string[] doc1 = Regex.Split(docString1, regex, RegexOptions.None).Where(s => !string.IsNullOrWhiteSpace(s)).ToArray();
-            //string[] doc2 = Regex.Split(docString2, regex, RegexOptions.None).Where(s => !string.IsNullOrWhiteSpace(s)).ToArray();
-
-            //has to change this to a faster one
-            //List<string> doc1 = doc1arr.Select(x => x.ToLower()).ToList();
-            //List<string> doc2 = doc2arr.Select(x => x.ToLower()).ToList();
-
             //check accurance of the string
             foreach (string s in doc1)
             {
@@ -97,17 +74,7 @@ namespace DocumentDistance
                     doc2hashMap.Add(s, 1);
                 }
             }
-            /*
-            foreach (string s in doc1hashMap.Keys)
-            {
-                Console.WriteLine($"{s}");
-            }
-            Console.WriteLine("second");
-            foreach (string s in doc2hashMap.Keys)
-            {
-                Console.WriteLine($"{s}");
-            }
-            */
+     
             //calculate d0, d1, d2
             foreach (int i in doc1hashMap.Values)
             {
@@ -122,40 +89,44 @@ namespace DocumentDistance
                 d0 += Math.BigMul(doc1hashMap[s], doc2hashMap[s]) ;
             }
 
-            //Console.WriteLine(d0);
-            //Console.WriteLine(d1);
-            //Console.WriteLine(d2);
+            //calculate angle
             distance = Math.Acos(d0 / (Math.Sqrt(d1 * d2)));
-            //Console.WriteLine(distance);
             distance = distance * (180 / Math.PI);
-            //Console.WriteLine(distance);
             return distance;
         }
 
+        /// <summary>
+        /// split function is not working right and does not split when '?' occurs, and Regex.split is slow, so write a function that does the splitting 
+        /// </summary>
+        /// <param name="document">document to be splitted</param>
+        /// <returns>list of alphanumerical strings from the document</returns>
         private static List<string> ExtractWords(string document)
         {
-            List<string> words = new List<string>();
+            List<string> alphanumerical = new List<string>();
             char[] characters = document.ToCharArray();
             int start = 0;
 
+            //iterate over the document
             for (int i = 0; i < characters.Length; i++)
             {
+                //if non alphanumerical 
                 if (!char.IsLetterOrDigit(characters[i]))
                 {
+                    //add to alphanumerical, or else it is just a separator so skip 
                     if (start < i)
                     {
-                        words.Add(new string(characters, start, i - start));
+                        alphanumerical.Add(new string(characters, start, i - start));
                     }
                     start = i + 1;
                 }
             }
-
+            //add last alphanumerical in the document if exists
             if (start < characters.Length)
             {
-                words.Add(new string(characters, start, characters.Length - start));
+                alphanumerical.Add(new string(characters, start, characters.Length - start));
             }
 
-            return words;
+            return alphanumerical;
         }
     }
 }
