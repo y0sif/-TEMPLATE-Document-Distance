@@ -29,8 +29,6 @@ namespace DocumentDistance
             //variable initialization
             string docString1;
             string docString2;
-            Dictionary<string, int> doc1hashMap = new Dictionary<string, int>();
-            Dictionary<string, int> doc2hashMap = new Dictionary<string, int>();
             double distance;
             double d0 = 0;
             double d1 = 0;
@@ -46,35 +44,10 @@ namespace DocumentDistance
                 docString2 = streamReader.ReadToEnd().ToLower();
             }
 
-            //spliting the string to an array
-            List<string> doc1 = ExtractWords(docString1);
-            List<string> doc2 = ExtractWords(docString2);
+            //spliting the string into a dictionary
+            Dictionary<string, int> doc1hashMap = SplitString(docString1);
+            Dictionary<string, int> doc2hashMap = SplitString(docString2);
 
-            //check accurance of the string
-            foreach (string s in doc1)
-            {
-                if (doc1hashMap.ContainsKey(s)){
-                    doc1hashMap[s] += 1;
-                }
-                //add it in hashmap if it is a new string
-                else
-                {
-                    doc1hashMap.Add(s, 1);
-                }
-            }
-            
-            foreach (string s in doc2)
-            {
-                if (doc2hashMap.ContainsKey(s))
-                {
-                    doc2hashMap[s] += 1;
-                }
-                else
-                {
-                    doc2hashMap.Add(s, 1);
-                }
-            }
-     
             //calculate d0, d1, d2
             foreach (int i in doc1hashMap.Values)
             {
@@ -96,15 +69,16 @@ namespace DocumentDistance
         }
 
         /// <summary>
-        /// split function is not working right and does not split when '?' occurs, and Regex.split is slow, so write a function that does the splitting 
+        /// a function that does the splitting due to split function is not working right and does not split when '?' occurs, and Regex.split is slow. 
         /// </summary>
         /// <param name="document">document to be splitted</param>
-        /// <returns>list of alphanumerical strings from the document</returns>
-        private static List<string> ExtractWords(string document)
+        /// <returns>dictionary of alphanumerical and number of occurrences from the document</returns>
+        private static Dictionary<string,int> SplitString(string document)
         {
-            List<string> alphanumerical = new List<string>();
+            Dictionary<string, int> alphanumerical = new Dictionary<string, int>();
             char[] characters = document.ToCharArray();
             int start = 0;
+            string s;
 
             //iterate over the document
             for (int i = 0; i < characters.Length; i++)
@@ -115,7 +89,15 @@ namespace DocumentDistance
                     //add to alphanumerical, or else it is just a separator so skip 
                     if (start < i)
                     {
-                        alphanumerical.Add(new string(characters, start, i - start));
+                        s = new string(characters, start, i - start);
+                        if (alphanumerical.ContainsKey(s))
+                        {
+                            alphanumerical[s]++;
+                        }
+                        else
+                        {
+                            alphanumerical.Add(s, 1);
+                        }
                     }
                     start = i + 1;
                 }
@@ -123,7 +105,8 @@ namespace DocumentDistance
             //add last alphanumerical in the document if exists
             if (start < characters.Length)
             {
-                alphanumerical.Add(new string(characters, start, characters.Length - start));
+                s = new string(characters, start, characters.Length - start);
+                alphanumerical.Add(s, 1);
             }
 
             return alphanumerical;
