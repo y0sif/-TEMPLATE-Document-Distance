@@ -51,12 +51,12 @@ namespace DocumentDistance
             List<string> doc2 = ExtractWords(docString2);
 
             // Compare sets of words
-            HashSet<string> set1 = new HashSet<string>(doc1);
-            HashSet<string> set2 = new HashSet<string>(doc2);
+            //HashSet<string> set1 = new HashSet<string>(doc1);
+            //HashSet<string> set2 = new HashSet<string>(doc2);
 
             // Check for differences
-            var onlyInSet1 = set1.Except(set2);
-            var onlyInSet2 = set2.Except(set1);
+            //var onlyInSet1 = set1.Except(set2);
+            //var onlyInSet2 = set2.Except(set1);
 
             //Console.WriteLine("Words only in doc1:");
             //Console.WriteLine(string.Join(", ", onlyInSet1));
