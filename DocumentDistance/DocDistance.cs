@@ -47,9 +47,22 @@ namespace DocumentDistance
             }
 
             //spliting the string to an array
-            char[] separators = {' ', '.', ',', ';', ':', '?', '!', '\'', '\"', '(', ')', '[', ']', '{', '}', '<', '>', '/', '\\', '|', '~', '`', '@', '#', '$', '%', '^', '&', '*', '+', '=', '_', '-', '\t', '\n', '\r', (char)160, (char)8211, (char)8212, (char)8230};
-            string[] doc1 = docString1.ToLower().Split(separators, StringSplitOptions.RemoveEmptyEntries);
-            string[] doc2 = docString2.ToLower().Split(separators, StringSplitOptions.RemoveEmptyEntries);
+            List<string> doc1 = ExtractWords(docString1);
+            List<string> doc2 = ExtractWords(docString2);
+
+            // Compare sets of words
+            HashSet<string> set1 = new HashSet<string>(doc1);
+            HashSet<string> set2 = new HashSet<string>(doc2);
+
+            // Check for differences
+            var onlyInSet1 = set1.Except(set2);
+            var onlyInSet2 = set2.Except(set1);
+
+            //Console.WriteLine("Words only in doc1:");
+            //Console.WriteLine(string.Join(", ", onlyInSet1));
+
+            //Console.WriteLine("Words only in doc2:");
+            //Console.WriteLine(string.Join(", ", onlyInSet2));
 
             //use regex
             //string regex = @"[^a-zA-Z0-9]+";
@@ -98,25 +111,51 @@ namespace DocumentDistance
             //calculate d0, d1, d2
             foreach (int i in doc1hashMap.Values)
             {
-                d1 += i * i;
+                d1 += Math.Pow(i, 2);
             }
             foreach (int i in doc2hashMap.Values)
             {
-                d2 += i * i;
+                d2 += Math.Pow(i,2);
             }
             foreach (string s in doc1hashMap.Keys.Intersect(doc2hashMap.Keys))
             {
-                d0 += doc1hashMap[s] * doc2hashMap[s];
+                d0 += Math.BigMul(doc1hashMap[s], doc2hashMap[s]) ;
             }
 
-            Console.WriteLine(d0);
-            Console.WriteLine(d1);
-            Console.WriteLine(d2);
+            //Console.WriteLine(d0);
+            //Console.WriteLine(d1);
+            //Console.WriteLine(d2);
             distance = Math.Acos(d0 / (Math.Sqrt(d1 * d2)));
-            Console.WriteLine(distance);
+            //Console.WriteLine(distance);
             distance = distance * (180 / Math.PI);
-            Console.WriteLine(distance);
+            //Console.WriteLine(distance);
             return distance;
+        }
+
+        private static List<string> ExtractWords(string document)
+        {
+            List<string> words = new List<string>();
+            char[] characters = document.ToCharArray();
+            int start = 0;
+
+            for (int i = 0; i < characters.Length; i++)
+            {
+                if (!char.IsLetterOrDigit(characters[i]))
+                {
+                    if (start < i)
+                    {
+                        words.Add(new string(characters, start, i - start));
+                    }
+                    start = i + 1;
+                }
+            }
+
+            if (start < characters.Length)
+            {
+                words.Add(new string(characters, start, characters.Length - start));
+            }
+
+            return words;
         }
     }
 }

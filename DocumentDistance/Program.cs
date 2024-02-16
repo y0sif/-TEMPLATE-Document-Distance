@@ -77,6 +77,7 @@ namespace DocumentDistance
                     
                     for (int i = 0; i < nCases; i++)
                     {
+
                         string D1FilePath = Console.ReadLine();
                         string D2FilePath = Console.ReadLine();
 
@@ -85,6 +86,7 @@ namespace DocumentDistance
                         List<int> car1_items = new List<int>();
                         List<int> car2_items = new List<int>();
                         Stopwatch sw = Stopwatch.StartNew();
+
                         actualResult = DocDistance.CalculateDistance(D1FilePath, D2FilePath);
                         sw.Stop();
                         if (sw.ElapsedMilliseconds > maxTime)
