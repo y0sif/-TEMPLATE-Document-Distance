@@ -26,6 +26,8 @@ namespace DocumentDistance
             // throw new NotImplementedException();
 
             //config thread pool for better performance
+            //values should change according to pc specs
+            /*
             int newMinWorkerThreads = 40;
             int newMinIocpThreads = 40;
             int newMaxWorkerThreads = 200;
@@ -33,6 +35,7 @@ namespace DocumentDistance
 
             ThreadPool.SetMinThreads(newMinWorkerThreads, newMinIocpThreads);
             ThreadPool.SetMaxThreads(newMaxWorkerThreads, newMaxIocpThreads);
+            */
 
 
             //variable initialization
