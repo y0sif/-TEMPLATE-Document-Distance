@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DocumentDistance
@@ -23,8 +21,19 @@ namespace DocumentDistance
         /// <returns>The angle (in degree) between the 2 documents</returns>
         public static double CalculateDistance(string doc1FilePath, string doc2FilePath)
         {
+
             // TODO comment the following line THEN fill your code here
             // throw new NotImplementedException();
+
+            //config thread pool for better performance
+            int newMinWorkerThreads = 40;
+            int newMinIocpThreads = 40;
+            int newMaxWorkerThreads = 200;
+            int newMaxIocpThreads = 200;
+
+            ThreadPool.SetMinThreads(newMinWorkerThreads, newMinIocpThreads);
+            ThreadPool.SetMaxThreads(newMaxWorkerThreads, newMaxIocpThreads);
+
 
             //variable initialization
             string docString1;
@@ -44,45 +53,74 @@ namespace DocumentDistance
                 docString2 = streamReader.ReadToEnd().ToLower();
             }
 
-            //spliting the string into a dictionary
-            Dictionary<string, int> doc1hashMap = SplitString(docString1);
-            Dictionary<string, int> doc2hashMap = SplitString(docString2);
+            //spliting the string into a dictionary in parallel
+            Dictionary<string, int> doc1hashMap = new Dictionary<string, int>();
+            Dictionary<string, int> doc2hashMap = new Dictionary<string, int>();
 
-            //calculate d0, d1, d2
+            Parallel.Invoke(
+                () =>
+                {
+                    //had to use tempHashMap and move it to the main hashMap so it can be seen out side of parallel
+                    Dictionary<string, int> tempHashMap = SplitString(docString1);
+                    foreach (var tuple in tempHashMap)
+                    {
+                        doc1hashMap.Add(tuple.Key, tuple.Value);
+                    }
+                },
+                () =>
+                {
+                    Dictionary<string, int> tempHashMap = SplitString(docString2);
+                    foreach (var tuple in tempHashMap)
+                    {
+                        doc2hashMap.Add(tuple.Key, tuple.Value);
+                    }
+                }
+            );
+
+            //calculate d0, d1, d2 in parallel
             //had to use Math functions because regular operations are not accurate
-            foreach (int i in doc1hashMap.Values)
-            {
-                d1 += Math.Pow(i, 2);
-            }
-            foreach (int i in doc2hashMap.Values)
-            {
-                d2 += Math.Pow(i,2);
-            }
-
-            //checking this way is faster than using .Intersect() 
-            if (doc1hashMap.Count > doc2hashMap.Count)
-            {
-                foreach (string s in doc2hashMap.Keys)
+            Parallel.Invoke(
+                () =>
                 {
-                    if (doc1hashMap.ContainsKey(s))
+                    if (doc1hashMap.Count > doc2hashMap.Count)
                     {
-                        d0 += Math.BigMul(doc1hashMap[s], doc2hashMap[s]);
+                        foreach (string s in doc2hashMap.Keys)
+                        {
+                            if (doc1hashMap.ContainsKey(s))
+                            {
+                                d0 += Math.BigMul(doc1hashMap[s], doc2hashMap[s]);
 
+                            }
+                        }
+                    }
+                    else
+                    {
+                        foreach (string s in doc1hashMap.Keys)
+                        {
+                            if (doc2hashMap.ContainsKey(s))
+                            {
+                                d0 += Math.BigMul(doc1hashMap[s], doc2hashMap[s]);
+
+                            }
+                        }
+                    }
+                },
+                () =>
+                {
+                    foreach (int i in doc1hashMap.Values)
+                    {
+                        d1 += Math.Pow(i, 2);
+                    }
+                },
+                () =>
+                {
+                    foreach (int i in doc2hashMap.Values)
+                    {
+                        d2 += Math.Pow(i, 2);
                     }
                 }
-            }
-            else
-            {
-                foreach (string s in doc1hashMap.Keys)
-                {
-                    if (doc2hashMap.ContainsKey(s))
-                    {
-                        d0 += Math.BigMul(doc1hashMap[s], doc2hashMap[s]);
-
-                    }
-                }
-            }
-
+            );
+            
             //calculate angle
             distance = Math.Acos(d0 / (Math.Sqrt(d1 * d2)));
             distance = distance * (180 / Math.PI);
@@ -94,10 +132,10 @@ namespace DocumentDistance
         /// </summary>
         /// <param name="document">document to be splitted</param>
         /// <returns>dictionary of alphanumerical and number of occurrences from the document</returns>
-        private static Dictionary<string,int> SplitString(string document)
+        private static Dictionary<string,int> SplitString(string docString)
         {
-            Dictionary<string, int> alphanumerical = new Dictionary<string, int>();
-            char[] characters = document.ToCharArray();
+            Dictionary<string, int> doc = new Dictionary<string, int>();
+            char[] characters = docString.ToCharArray();
             int start = 0;
             string s;
 
@@ -107,17 +145,17 @@ namespace DocumentDistance
                 //if non alphanumerical 
                 if (!char.IsLetterOrDigit(characters[i]))
                 {
-                    //add to alphanumerical, or else it is just a separator so skip 
+                    //found a separator add the alphanumerical to the document, or else it is only a separator so skip 
                     if (start < i)
                     {
                         s = new string(characters, start, i - start);
-                        if (alphanumerical.ContainsKey(s))
+                        if (doc.ContainsKey(s))
                         {
-                            alphanumerical[s]++;
+                            doc[s] += 1;
                         }
                         else
                         {
-                            alphanumerical.Add(s, 1);
+                            doc.Add(s, 1);
                         }
                     }
                     start = i + 1;
@@ -127,10 +165,10 @@ namespace DocumentDistance
             if (start < characters.Length)
             {
                 s = new string(characters, start, characters.Length - start);
-                alphanumerical.Add(s, 1);
+                doc.Add(s, 1);
             }
 
-            return alphanumerical;
+            return doc;
         }
     }
 }
