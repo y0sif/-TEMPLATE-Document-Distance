@@ -49,6 +49,7 @@ namespace DocumentDistance
             Dictionary<string, int> doc2hashMap = SplitString(docString2);
 
             //calculate d0, d1, d2
+            //had to use Math functions because regular operations are not accurate
             foreach (int i in doc1hashMap.Values)
             {
                 d1 += Math.Pow(i, 2);
