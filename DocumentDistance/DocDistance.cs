@@ -27,6 +27,7 @@ namespace DocumentDistance
 
             //config thread pool for better performance
             //values should change according to pc specs
+            //will leave it as default
             /*
             int newMinWorkerThreads = 40;
             int newMinIocpThreads = 40;
@@ -37,11 +38,9 @@ namespace DocumentDistance
             ThreadPool.SetMaxThreads(newMaxWorkerThreads, newMaxIocpThreads);
             */
 
-
             //variable initialization
             string docString1;
             string docString2;
-            double distance;
             double d0 = 0;
             double d1 = 0;
             double d2 = 0;
@@ -64,7 +63,7 @@ namespace DocumentDistance
                 () =>
                 {
                     //had to use tempHashMap and move it to the main hashMap so it can be seen out side of parallel
-                    Dictionary<string, int> tempHashMap = SplitString(docString1);
+                    Dictionary<string, int> tempHashMap = SplitStringToDictionary(docString1);
                     foreach (var tuple in tempHashMap)
                     {
                         doc1hashMap.Add(tuple.Key, tuple.Value);
@@ -72,7 +71,7 @@ namespace DocumentDistance
                 },
                 () =>
                 {
-                    Dictionary<string, int> tempHashMap = SplitString(docString2);
+                    Dictionary<string, int> tempHashMap = SplitStringToDictionary(docString2);
                     foreach (var tuple in tempHashMap)
                     {
                         doc2hashMap.Add(tuple.Key, tuple.Value);
@@ -85,6 +84,7 @@ namespace DocumentDistance
             Parallel.Invoke(
                 () =>
                 {
+                    //this way is faster than .Intersect()
                     if (doc1hashMap.Count > doc2hashMap.Count)
                     {
                         foreach (string s in doc2hashMap.Keys)
@@ -125,17 +125,16 @@ namespace DocumentDistance
             );
             
             //calculate angle
-            distance = Math.Acos(d0 / (Math.Sqrt(d1 * d2)));
-            distance = distance * (180 / Math.PI);
-            return distance;
+            return Math.Acos(d0 / (Math.Sqrt(d1 * d2))) * (180 / Math.PI);
+            
         }
 
         /// <summary>
-        /// a function that does the splitting due to split function is not working right and does not split when '?' occurs, and Regex.split is slow. 
+        /// a function that does the splitting and forming the dictionary due to split function is not working right and not splitting when '?' occurs, and Regex.split being so slow. 
         /// </summary>
         /// <param name="document">document to be splitted</param>
-        /// <returns>dictionary of alphanumerical and number of occurrences from the document</returns>
-        private static Dictionary<string,int> SplitString(string docString)
+        /// <returns>a dictionary of alphanumerical and the number of occurrences of each alphanumerical value</returns>
+        private static Dictionary<string,int> SplitStringToDictionary(string docString)
         {
             Dictionary<string, int> doc = new Dictionary<string, int>();
             char[] characters = docString.ToCharArray();
