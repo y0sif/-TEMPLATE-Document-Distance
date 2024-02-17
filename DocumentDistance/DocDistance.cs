@@ -58,9 +58,29 @@ namespace DocumentDistance
             {
                 d2 += Math.Pow(i,2);
             }
-            foreach (string s in doc1hashMap.Keys.Intersect(doc2hashMap.Keys))
+
+            //checking this way is faster than using .Intersect() 
+            if (doc1hashMap.Count > doc2hashMap.Count)
             {
-                d0 += Math.BigMul(doc1hashMap[s], doc2hashMap[s]) ;
+                foreach (string s in doc2hashMap.Keys)
+                {
+                    if (doc1hashMap.ContainsKey(s))
+                    {
+                        d0 += Math.BigMul(doc1hashMap[s], doc2hashMap[s]);
+
+                    }
+                }
+            }
+            else
+            {
+                foreach (string s in doc1hashMap.Keys)
+                {
+                    if (doc2hashMap.ContainsKey(s))
+                    {
+                        d0 += Math.BigMul(doc1hashMap[s], doc2hashMap[s]);
+
+                    }
+                }
             }
 
             //calculate angle
