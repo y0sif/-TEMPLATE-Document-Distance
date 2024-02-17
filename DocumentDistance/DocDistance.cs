@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,35 +26,36 @@ namespace DocumentDistance
             // TODO comment the following line THEN fill your code here
             // throw new NotImplementedException();
 
-            //config thread pool for better performance
-            //values should change according to pc specs
-            //will leave it as default
             /*
-            int newMinWorkerThreads = 40;
-            int newMinIocpThreads = 40;
-            int newMaxWorkerThreads = 200;
-            int newMaxIocpThreads = 200;
-
-            ThreadPool.SetMinThreads(newMinWorkerThreads, newMinIocpThreads);
-            ThreadPool.SetMaxThreads(newMaxWorkerThreads, newMaxIocpThreads);
-            */
+             * best result:
+             * Average execution time (ms) = 196.2
+             * Max execution time (ms) = 440
+             */
 
             //variable initialization
-            string docString1;
-            string docString2;
+            string docString1 = "";
+            string docString2 = "";
             double d0 = 0;
             double d1 = 0;
             double d2 = 0;
 
-            //reading file into a string
-            using (StreamReader streamReader = new StreamReader(doc1FilePath, Encoding.UTF8))
-            {
-                docString1 = streamReader.ReadToEnd().ToLower();
-            }
-            using (StreamReader streamReader = new StreamReader(doc2FilePath, Encoding.UTF8))
-            {
-                docString2 = streamReader.ReadToEnd().ToLower();
-            }
+            //reading file into a string in parallel
+            Parallel.Invoke(
+                () =>
+                {
+                    using (StreamReader streamReader = new StreamReader(doc1FilePath, Encoding.UTF8))
+                    {
+                        docString1 = streamReader.ReadToEnd().ToLower();
+                    }
+                },
+                () =>
+                {
+                    using (StreamReader streamReader = new StreamReader(doc2FilePath, Encoding.UTF8))
+                    {
+                        docString2 = streamReader.ReadToEnd().ToLower();
+                    }
+                }
+            );
 
             //spliting the string into a dictionary in parallel
             Dictionary<string, int> doc1hashMap = new Dictionary<string, int>();
@@ -62,20 +64,11 @@ namespace DocumentDistance
             Parallel.Invoke(
                 () =>
                 {
-                    //had to use tempHashMap and move it to the main hashMap so it can be seen out side of parallel
-                    Dictionary<string, int> tempHashMap = SplitStringToDictionary(docString1);
-                    foreach (var tuple in tempHashMap)
-                    {
-                        doc1hashMap.Add(tuple.Key, tuple.Value);
-                    }
+                    doc1hashMap = SplitStringToDictionary(docString1);
                 },
                 () =>
                 {
-                    Dictionary<string, int> tempHashMap = SplitStringToDictionary(docString2);
-                    foreach (var tuple in tempHashMap)
-                    {
-                        doc2hashMap.Add(tuple.Key, tuple.Value);
-                    }
+                    doc2hashMap = SplitStringToDictionary(docString2);
                 }
             );
 
@@ -85,6 +78,7 @@ namespace DocumentDistance
                 () =>
                 {
                     //this way is faster than .Intersect()
+                    //iterate over the smaller hashMap in size --> less iterations 
                     if (doc1hashMap.Count > doc2hashMap.Count)
                     {
                         foreach (string s in doc2hashMap.Keys)
@@ -141,7 +135,7 @@ namespace DocumentDistance
             int start = 0;
             string s;
 
-            //iterate over the document
+            //iterate over the document charachters
             for (int i = 0; i < characters.Length; i++)
             {
                 //if non alphanumerical 
@@ -150,6 +144,7 @@ namespace DocumentDistance
                     //found a separator add the alphanumerical to the document, or else it is only a separator so skip 
                     if (start < i)
                     {
+                        //add characters from start to the separator 
                         s = new string(characters, start, i - start);
                         if (doc.ContainsKey(s))
                         {
