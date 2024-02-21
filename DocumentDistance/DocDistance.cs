@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace DocumentDistance
@@ -39,7 +37,7 @@ namespace DocumentDistance
             double d1 = 0;
             double d2 = 0;
 
-            //reading file into a string in parallel
+            //reading file into a string and converting it to lower case in parallel
             Parallel.Invoke(
                 () =>
                 {
@@ -58,8 +56,8 @@ namespace DocumentDistance
             );
 
             //spliting the string into a dictionary in parallel
-            Dictionary<string, int> doc1hashMap = new Dictionary<string, int>();
-            Dictionary<string, int> doc2hashMap = new Dictionary<string, int>();
+            Dictionary<long, int> doc1hashMap = new Dictionary<long, int>();
+            Dictionary<long, int> doc2hashMap = new Dictionary<long, int>();
 
             Parallel.Invoke(
                 () =>
@@ -81,7 +79,7 @@ namespace DocumentDistance
                     //iterate over the smaller hashMap in size --> less iterations 
                     if (doc1hashMap.Count > doc2hashMap.Count)
                     {
-                        foreach (string s in doc2hashMap.Keys)
+                        foreach (long s in doc2hashMap.Keys)
                         {
                             if (doc1hashMap.ContainsKey(s))
                             {
@@ -92,7 +90,7 @@ namespace DocumentDistance
                     }
                     else
                     {
-                        foreach (string s in doc1hashMap.Keys)
+                        foreach (long s in doc1hashMap.Keys)
                         {
                             if (doc2hashMap.ContainsKey(s))
                             {
@@ -124,13 +122,13 @@ namespace DocumentDistance
         }
 
         /// <summary>
-        /// a function that does the splitting and forming the dictionary due to split function is not working right and not splitting when '?' occurs, and Regex.split being so slow. 
+        /// a function that does the splitting and forming the dictionary due to split function being slower and it is not working right and not splitting when '?' occurs, and Regex.split being so slow. 
         /// </summary>
         /// <param name="document">document to be splitted</param>
         /// <returns>a dictionary of alphanumerical and the number of occurrences of each alphanumerical value</returns>
-        private static Dictionary<string,int> SplitStringToDictionary(string docString)
+        private static Dictionary<long,int> SplitStringToDictionary(string docString)
         {
-            Dictionary<string, int> doc = new Dictionary<string, int>();
+            Dictionary<long, int> doc = new Dictionary<long, int>();
             char[] characters = docString.ToCharArray();
             int start = 0;
             string s;
@@ -146,13 +144,13 @@ namespace DocumentDistance
                     {
                         //add characters from start to the separator 
                         s = new string(characters, start, i - start);
-                        if (doc.ContainsKey(s))
+                        if (doc.ContainsKey(s.GetHashCode()))
                         {
-                            doc[s] += 1;
+                            doc[s.GetHashCode()] += 1;
                         }
                         else
                         {
-                            doc.Add(s, 1);
+                            doc.Add(s.GetHashCode(), 1);
                         }
                     }
                     start = i + 1;
@@ -162,7 +160,14 @@ namespace DocumentDistance
             if (start < characters.Length)
             {
                 s = new string(characters, start, characters.Length - start);
-                doc.Add(s, 1);
+                if (doc.ContainsKey(s.GetHashCode()))
+                {
+                    doc[s.GetHashCode()] += 1;
+                }
+                else
+                {
+                    doc.Add(s.GetHashCode(), 1);
+                }
             }
 
             return doc;
